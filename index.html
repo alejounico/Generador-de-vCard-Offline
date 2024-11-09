@@ -1,0 +1,468 @@
+<html><head><base href="." />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de vCard Offline</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+  }
+  
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .container {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 700px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .logo {
+    display: block;
+    margin: 0 auto 2rem 0;
+    max-width: 160px;
+    height: auto;
+  }
+
+  .watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: auto;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container > *:not(.watermark) {
+    position: relative;
+    z-index: 1;
+  }
+
+  h1 {
+    color: #2c3e50;
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+
+  h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: #1a237e;
+    border-radius: 2px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group i {
+    color: #7f8c8d;
+    margin-right: 8px;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    color: #34495e;
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+  }
+
+  input:focus, select:focus {
+    border-color: #1a237e;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+    outline: none;
+  }
+
+  .btn {
+    background: #1a237e;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn:hover {
+    background: #161b54;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
+  }
+
+  .btn:active {
+    transform: translateY(0);
+  }
+
+  .preview {
+    margin-top: 2.5rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    word-break: break-all;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .preview h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  pre {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    font-family: monospace;
+    font-size: 0.9rem;
+  }
+
+  .qr-section {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  #qrcode {
+    display: flex;
+    justify-content: center;
+    margin: 1rem 0;
+  }
+
+  .download-section {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  .download-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .download-buttons .download-link {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 0.75rem 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #1a237e;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .download-buttons .download-link:hover {
+    background: rgba(26, 35, 126, 0.1);
+  }
+
+  .add-field-btn {
+    background: none;
+    border: 2px dashed #1a237e;
+    color: #1a237e;
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 0.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .add-field-btn:hover {
+    background: rgba(26, 35, 126, 0.1);
+  }
+
+  .remove-field {
+    color: #ff4444;
+    cursor: pointer;
+    margin-left: 0.5rem;
+  }
+
+  .field-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 600px) {
+    .container {
+      padding: 1.5rem;
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .footer {
+    text-align: center;
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://www.icardcolombia.com/wp-content/uploads/2023/07/logo.png.webp" alt="iCard Colombia logo" class="logo" width="160" height="60">
+    <h1>Generador de vCard Offline</h1>
+    <form id="vcardForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Nombre</label>
+          <input type="text" id="firstName" required placeholder="Ej: Juan">
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Apellidos</label>
+          <input type="text" id="lastName" required placeholder="Ej: Pérez">
+        </div>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label><i class="fas fa-building"></i> Organización</label>
+          <input type="text" id="organization" placeholder="Ej: Empresa S.A.">
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-briefcase"></i> Cargo</label>
+          <input type="text" id="title" placeholder="Ej: Director Ejecutivo">
+        </div>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Email</label>
+          <div id="emailFields">
+            <div class="field-container">
+              <input type="email" class="email-input" placeholder="Ej: juan@empresa.com">
+              <i class="fas fa-times remove-field" onclick="removeField(this)"></i>
+            </div>
+          </div>
+          <button type="button" class="add-field-btn" onclick="addEmailField()">
+            <i class="fas fa-plus"></i> Agregar otro email
+          </button>
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-phone"></i> Teléfono</label>
+          <div id="phoneFields">
+            <div class="field-container">
+              <input type="tel" class="phone-input" placeholder="Ej: +34 600 000 000">
+              <i class="fas fa-times remove-field" onclick="removeField(this)"></i>
+            </div>
+          </div>
+          <button type="button" class="add-field-btn" onclick="addPhoneField()">
+            <i class="fas fa-plus"></i> Agregar otro teléfono
+          </button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label><i class="fas fa-globe"></i> Link de iCard</label>
+        <input type="url" id="website" placeholder="Ej: https://www.icardglobal.com">
+      </div>
+      
+      <button type="submit" class="btn">
+        <i class="fas fa-magic"></i>
+        Generar vCard
+      </button>
+    </form>
+
+    <div id="preview" class="preview">
+      <h3><i class="fas fa-eye"></i> Vista previa</h3>
+      <pre id="vcardPreview"></pre>
+      <div class="qr-section">
+        <h3><i class="fas fa-qrcode"></i> Código QR</h3>
+        <div id="qrcode"></div>
+      </div>
+      <div class="download-buttons">
+        <a href="#" id="downloadLink" class="download-link" download="contact.vcf">
+          <i class="fas fa-download"></i>
+          Descargar vCard
+        </a>
+        <a href="#" id="downloadQR" class="download-link" download="qr-code.png">
+          <i class="fas fa-qrcode"></i>
+          Descargar QR
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      Powered by iCard Global 2023
+    </div>
+  </div>
+
+<script>
+function addEmailField() {
+  const container = document.getElementById('emailFields');
+  const fieldDiv = document.createElement('div');
+  fieldDiv.className = 'field-container';
+  fieldDiv.innerHTML = `
+    <input type="email" class="email-input" placeholder="Ej: juan@empresa.com">
+    <i class="fas fa-times remove-field" onclick="removeField(this)"></i>
+  `;
+  container.appendChild(fieldDiv);
+}
+
+function addPhoneField() {
+  const container = document.getElementById('phoneFields');
+  const fieldDiv = document.createElement('div');
+  fieldDiv.className = 'field-container';
+  fieldDiv.innerHTML = `
+    <input type="tel" class="phone-input" placeholder="Ej: +34 600 000 000">
+    <i class="fas fa-times remove-field" onclick="removeField(this)"></i>
+  `;
+  container.appendChild(fieldDiv);
+}
+
+function removeField(element) {
+  const container = element.parentElement;
+  if (container.parentElement.children.length > 1) {
+    container.remove();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('vcardForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    try {
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const organization = document.getElementById('organization').value.trim();
+      const title = document.getElementById('title').value.trim();
+      const emails = Array.from(document.getElementsByClassName('email-input')).map(input => input.value.trim()).filter(Boolean);
+      const phones = Array.from(document.getElementsByClassName('phone-input')).map(input => input.value.trim()).filter(Boolean);
+      const website = document.getElementById('website').value.trim();
+      
+      let vcard = `BEGIN:VCARD\nVERSION:3.0\n`;
+      vcard += `N:${lastName};${firstName};;;\n`;
+      vcard += `FN:${firstName} ${lastName}\n`;
+      
+      if (organization) vcard += `ORG:${organization}\n`;
+      if (title) vcard += `TITLE:${title}\n`;
+      
+      emails.forEach(email => {
+        vcard += `EMAIL;TYPE=INTERNET:${email}\n`;
+      });
+      
+      phones.forEach(phone => {
+        vcard += `TEL;TYPE=CELL:${phone}\n`;
+      });
+      
+      if (website) vcard += `URL:${website}\n`;
+      
+      vcard += `END:VCARD`;
+
+      const preview = document.getElementById('preview');
+      preview.style.display = 'block';
+      document.getElementById('vcardPreview').textContent = vcard;
+      
+      const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const downloadLink = document.getElementById('downloadLink');
+      downloadLink.href = url;
+
+      const qrcodeContainer = document.getElementById('qrcode');
+      qrcodeContainer.innerHTML = '';
+      
+      new QRCode(qrcodeContainer, {
+        text: vcard,
+        width: 200,
+        height: 200,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      setTimeout(() => {
+        const qrCanvas = qrcodeContainer.querySelector('canvas');
+        if (qrCanvas) {
+          const downloadQR = document.getElementById('downloadQR');
+          downloadQR.href = qrCanvas.toDataURL('image/png');
+        }
+      }, 200);
+
+      downloadLink.addEventListener('click', () => {
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 100);
+      });
+
+      preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (error) {
+      console.error('Error generating vCard:', error);
+    }
+  });
+
+  document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', function() {
+      this.style.borderColor = this.validity.valid ? '#e0e0e0' : '#ff4444';
+    });
+  });
+});
+</script>
+</body></html>
